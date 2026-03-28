@@ -1,0 +1,12 @@
+{
+  "name": "kitchen-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cloud-native Kitchen App workspace",
+  "scripts": {
+    "api:test": "npm --prefix api test",
+    "api:lint": "npm --prefix api run lint",
+    "compose:up": "docker compose up --build -d",
+    "compose:down": "docker compose down"
+  }
+}
