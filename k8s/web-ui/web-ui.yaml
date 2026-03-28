@@ -35,60 +35,82 @@ data:
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Kitchen Orders Dashboard</title>
+      <title>Kitchen Dashboard</title>
       <style>
-        body { font-family: 'Arial', sans-serif; margin:0; background:#1e1e2f; color:#f0f0f5; }
-        header { background:#ff4c4c; padding:20px; text-align:center; font-size:26px; font-weight:bold; }
-        .container { display:flex; flex-wrap:wrap; gap:20px; padding:20px; justify-content:center; }
-        .panel { background:#2e2e44; border-radius:12px; padding:20px; flex:1 1 350px; box-shadow:0 4px 15px rgba(0,0,0,0.3); }
-        h2 { margin-top:0; color:#ffd700; }
-        input { padding:10px; width:70%; border-radius:8px; border:none; margin-right:10px; }
-        button { padding:10px 15px; border-radius:8px; border:none; cursor:pointer; background:#00c2cb; color:#fff; font-weight:bold; }
-        button:hover { background:#00a7b0; }
-        .order-card { background:#3e3e60; border-left:5px solid #ff4c4c; margin:12px 0; padding:12px; border-radius:8px; }
-        .status { font-weight:bold; }
-        .online { color:#00ff90; }
-        .offline { color:#ff4c4c; }
+        body { margin:0; font-family: Arial, sans-serif; background:#f5f5f5; color:#333; }
+        header { background:#2c3e50; color:white; padding:20px; text-align:center; font-size:24px; }
+        nav { background:#34495e; padding:10px; text-align:center; }
+        nav a { color:#ecf0f1; margin:0 12px; text-decoration:none; font-weight:bold; }
+        nav a:hover { text-decoration:underline; }
+        .container { display:flex; flex-wrap:wrap; gap:20px; padding:20px; }
+        .panel { flex:1 1 300px; background:white; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+        input { width:70%; padding:10px; margin-right:10px; border:1px solid #ccc; border-radius:4px; }
+        button { padding:10px 15px; border:none; border-radius:4px; background:#2980b9; color:white; cursor:pointer; }
+        button:hover { background:#3498db; }
+        .order-card { background:#ecf0f1; margin:10px 0; padding:10px; border-left:4px solid #2980b9; border-radius:4px; }
+        .online { color:#27ae60; font-weight:bold; }
+        .offline { color:#c0392b; font-weight:bold; }
       </style>
     </head>
     <body>
-      <header>🍽️ Modern Kitchen Dashboard</header>
+      <header>🍴 Kitchen Dashboard</header>
+      <nav>
+        <a href="#">Home</a>
+        <a href="#">Orders History</a>
+      </nav>
       <div class="container">
         <div class="panel">
           <h2>Create Order</h2>
-          <input id="dish" placeholder="Enter dish name" />
-          <button onclick="createOrder()">Add Order</button>
-          <p>Status: <span id="apiStatus" class="offline">Checking...</span></p>
+          <input id="dish" placeholder="Dish name" />
+          <button onclick="createOrder()">Add</button>
+          <p>API: <span id="apiStatus" class="offline">Checking...</span></p>
           <p id="msg"></p>
         </div>
-
         <div class="panel">
-          <h2>Current Orders</h2>
-          <button onclick="loadOrders()">Refresh Orders</button>
+          <h2>Orders</h2>
+          <button onclick="loadOrders()">Refresh</button>
           <div id="orders"></div>
         </div>
       </div>
-
       <script>
         const API="/api";
         async function checkHealth() {
-          try { const r = await fetch(API+"/health"); const d=await r.json();
-            const el=document.getElementById("apiStatus");
-            el.innerText="Online ("+d.db+")"; el.className="online";
-          } catch { const el=document.getElementById("apiStatus"); el.innerText="Offline"; el.className="offline"; }
+          try {
+            const r = await fetch(API + "/health");
+            const d = await r.json();
+            document.getElementById("apiStatus").innerText = "Online (" + d.db + ")";
+            document.getElementById("apiStatus").className = "online";
+          } catch {
+            document.getElementById("apiStatus").innerText = "Offline";
+            document.getElementById("apiStatus").className = "offline";
+          }
         }
+
         async function loadOrders() {
-          const el=document.getElementById("orders"); el.innerHTML="Loading...";
-          try { const r = await fetch(API+"/orders"); const data=await r.json();
-            el.innerHTML=data.reverse().map(o=>`<div class="order-card"><div><b>Dish:</b>${o.dish}</div><div class="status"><b>Status:</b>${o.status}</div><div><small>ID:${o._id}</small></div></div>`).join("");
-          } catch { el.innerHTML="Error loading orders"; }
+          const el = document.getElementById("orders");
+          el.innerHTML = "Loading...";
+          try {
+            const r = await fetch(API + "/orders");
+            const data = await r.json();
+            el.innerHTML = data.reverse().map(o =>
+              `<div class="order-card"><b>${o.dish}</b><br/>${o.status}<br/><small>${o._id}</small></div>`
+            ).join("");
+          } catch {
+            el.innerHTML = "Error loading orders";
+          }
         }
+
         async function createOrder() {
-          const dish=document.getElementById("dish").value; if(!dish) return;
-          await fetch(API+"/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish})});
-          document.getElementById("dish").value=""; loadOrders();
+          const dish = document.getElementById("dish").value;
+          if (!dish) return;
+          await fetch(API + "/orders", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({dish}) });
+          loadOrders();
         }
-        checkHealth(); loadOrders(); setInterval(checkHealth,8000); setInterval(loadOrders,5000);
+
+        checkHealth();
+        loadOrders();
+        setInterval(checkHealth, 8000);
+        setInterval(loadOrders, 5000);
       </script>
     </body>
     </html>
@@ -111,31 +133,31 @@ spec:
         app: kitchen-web-ui
     spec:
       containers:
-      - name: web-ui
-        image: nginx:alpine
-        ports:
-        - containerPort: 80
-        volumeMounts:
-        - name: web-ui-config
-          mountPath: /etc/nginx/conf.d/default.conf
-          subPath: nginx.conf
-        - name: web-ui-config
-          mountPath: /usr/share/nginx/html/index.html
-          subPath: index.html
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 80
-          initialDelaySeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 80
-          initialDelaySeconds: 5
+        - name: web-ui
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: web-ui-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: nginx.conf
+            - name: web-ui-config
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 5
       volumes:
-      - name: web-ui-config
-        configMap:
-          name: web-ui-config
+        - name: web-ui-config
+          configMap:
+            name: web-ui-config
 
 ---
 
@@ -149,6 +171,6 @@ spec:
   selector:
     app: kitchen-web-ui
   ports:
-  - port: 80
-    targetPort: 80
-    nodePort: 30080
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
